@@ -9,6 +9,7 @@ import { after, before, test } from 'node:test'
 const exec = promisify(execFile)
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const cli = path.join(root, 'kriterion')
+const nativeCli = process.env.KRITERION_TEST_EXECUTABLE
 const requests = []
 let server
 let api
@@ -79,14 +80,14 @@ test('shows help and version before environment validation', async () => {
     CF_ACCESS_CLIENT_ID: 'incomplete-pair',
     CF_ACCESS_CLIENT_SECRET: '',
   }
-  const help = await exec(process.execPath, [cli, '--help'], { env: invalidEnvironment })
-  const version = await exec(process.execPath, [cli, '--version'], { env: invalidEnvironment })
+  const help = await execCli(['--help'], { env: invalidEnvironment })
+  const version = await execCli(['--version'], { env: invalidEnvironment })
   assert.match(help.stdout, /Kriterion participant CLI/)
   assert.equal(version.stdout.trim(), '0.1.0')
 })
 
 test('shows the authenticated account and forwards access headers', async () => {
-  const { stdout } = await exec(process.execPath, [cli, '--api', api, 'whoami'], {
+  const { stdout } = await execCli(['--api', api, 'whoami'], {
     env: {
       ...process.env,
       KRITERION_TOKEN: 'test-token',
@@ -110,15 +111,14 @@ test('reads public participant resources', async () => {
   ]
   const expected = ['sample-challenge', 'sample-challenge', 0, 'submission-1']
   for (const [index, [args, select]] of commands.entries()) {
-    const { stdout } = await exec(process.execPath, [cli, '--api', api, ...args])
+    const { stdout } = await execCli(['--api', api, ...args])
     assert.equal(select(JSON.parse(stdout)), expected[index])
   }
 })
 
 test('submits one pinned public repository', async () => {
   const commit = 'a'.repeat(40)
-  const { stdout } = await exec(process.execPath, [
-    cli,
+  const { stdout } = await execCli([
     '--api', api,
     'submit',
     '--challenge', 'sample-challenge',
@@ -142,8 +142,7 @@ test('submits one pinned public repository', async () => {
 test('rejects an invalid commit before it calls the API', async () => {
   const count = requests.length
   await assert.rejects(
-    exec(process.execPath, [
-      cli,
+    execCli([
       '--api', api,
       'submit',
       '--challenge', 'sample-challenge',
@@ -157,7 +156,7 @@ test('rejects an invalid commit before it calls the API', async () => {
 
 test('requires a token for authenticated commands', async () => {
   await assert.rejects(
-    exec(process.execPath, [cli, '--api', api, 'whoami'], {
+    execCli(['--api', api, 'whoami'], {
       env: { ...process.env, KRITERION_TOKEN: '' },
     }),
     (error) => error.code === 4 && error.stderr.includes('KRITERION_TOKEN is required'),
@@ -166,7 +165,7 @@ test('requires a token for authenticated commands', async () => {
 
 test('requires both Cloudflare Access service-token variables', async () => {
   await assert.rejects(
-    exec(process.execPath, [cli, '--api', api, 'challenge', 'list'], {
+    execCli(['--api', api, 'challenge', 'list'], {
       env: { ...process.env, CF_ACCESS_CLIENT_ID: 'access-id', CF_ACCESS_CLIENT_SECRET: '' },
     }),
     (error) => error.code === 1 && error.stderr.includes('set both Cloudflare Access'),
@@ -175,7 +174,7 @@ test('requires both Cloudflare Access service-token variables', async () => {
 
 test('rejects remote plain HTTP before making a request', async () => {
   await assert.rejects(
-    exec(process.execPath, [cli, '--api', 'http://example.com', 'challenge', 'list']),
+    execCli(['--api', 'http://example.com', 'challenge', 'list']),
     (error) => error.code === 1 && error.stderr.includes('--api must use https'),
   )
 })
@@ -183,7 +182,7 @@ test('rejects remote plain HTTP before making a request', async () => {
 test('refuses redirects without forwarding authentication credentials', async () => {
   const count = requests.length
   await assert.rejects(
-    exec(process.execPath, [cli, '--api', api, 'challenge', 'list'], {
+    execCli(['--api', api, 'challenge', 'list'], {
       env: {
         ...process.env,
         KRITERION_TOKEN: 'redirect-token',
@@ -199,14 +198,19 @@ test('refuses redirects without forwarding authentication credentials', async ()
 
 test('ignores remote exit code zero and uses the HTTP status mapping', async () => {
   await assert.rejects(
-    exec(process.execPath, [cli, '--api', api, 'challenge', 'show', 'zero-exit-code']),
+    execCli(['--api', api, 'challenge', 'show', 'zero-exit-code']),
     (error) => error.code === 2 && error.stderr.includes('exitCode'),
   )
 })
 
 test('ignores arbitrary remote exit codes and uses the HTTP status mapping', async () => {
   await assert.rejects(
-    exec(process.execPath, [cli, '--api', api, 'challenge', 'show', 'arbitrary-exit-code']),
+    execCli(['--api', api, 'challenge', 'show', 'arbitrary-exit-code']),
     (error) => error.code === 4 && error.stderr.includes('exitCode'),
   )
 })
+
+function execCli(args, options) {
+  if (nativeCli) return exec(nativeCli, args, options)
+  return exec(process.execPath, [cli, ...args], options)
+}

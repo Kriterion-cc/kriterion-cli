@@ -29,7 +29,7 @@ console.log(`checked ${markdownFiles.length} Markdown files and openapi.json`)
 async function findMarkdown(directory) {
   const found = []
   for (const entry of await readdir(directory, { withFileTypes: true })) {
-    if (entry.name === '.git' || entry.name === 'node_modules') continue
+    if (entry.name === '.git' || entry.name === 'dist' || entry.name === 'node_modules') continue
     const item = path.join(directory, entry.name)
     if (entry.isDirectory()) found.push(...await findMarkdown(item))
     else if (entry.name.endsWith('.md')) found.push(item)

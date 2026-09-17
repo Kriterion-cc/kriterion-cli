@@ -1,0 +1,91 @@
+name: Release Kriterion CLI
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: '24.21.0'
+
+jobs:
+  build:
+    name: Build ${{ matrix.target }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: darwin-arm64
+            runner: macos-15
+          - target: darwin-x64
+            runner: macos-15-intel
+          - target: linux-arm64
+            runner: ubuntu-24.04-arm
+          - target: linux-x64
+            runner: ubuntu-24.04
+          - target: windows-x64
+            runner: windows-2022
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - run: node scripts/check-release-tag.mjs "${{ github.ref_name }}"
+      - run: npm test
+      - run: npm run check
+      - run: npm run build:native -- --target "${{ matrix.target }}"
+      - name: Check the Windows archive signature state
+        if: matrix.target == 'windows-x64'
+        shell: pwsh
+        run: |
+          $archive = "dist/kriterion-${{ github.ref_name }}-windows-x64.zip"
+          $directory = Join-Path $env:RUNNER_TEMP 'kriterion-signature-check'
+          Expand-Archive -LiteralPath $archive -DestinationPath $directory
+          $files = @(Get-ChildItem -LiteralPath $directory -File)
+          if ($files.Count -ne 1 -or $files[0].Name -ne 'kriterion.exe') {
+            throw 'The Windows archive contents are invalid.'
+          }
+          $status = (Get-AuthenticodeSignature $files[0].FullName).Status
+          if ($status -ne 'NotSigned') {
+            throw "Expected NotSigned, got $status."
+          }
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: native-${{ matrix.target }}
+          path: dist/kriterion-*
+          if-no-files-found: error
+          retention-days: 7
+
+  release:
+    name: Publish release
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: native-*
+          path: dist
+          merge-multiple: true
+      - run: node scripts/check-release-tag.mjs "${{ github.ref_name }}"
+      - run: npm run release:manifest
+      - run: node scripts/verify-release.mjs --directory dist
+      - name: Publish immutable release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh release create "${{ github.ref_name }}" dist/*
+          --verify-tag
+          --title "Kriterion CLI ${{ github.ref_name }}"
+          --notes-file docs/release-notes.md

@@ -3,12 +3,14 @@
 Kriterion compares cryptography designs with machine-checked Lean proofs.
 This repository contains the public participant CLI and participant API documentation.
 
-The CLI has no package dependencies. It needs Node.js 18 or newer.
+Use a native file, or use the Node.js script on Node.js 18 or newer.
 
-- [Download the CLI executable](https://raw.githubusercontent.com/Kriterion-cc/kriterion-cli/main/kriterion)
+- [Download the latest native CLI](https://github.com/Kriterion-cc/kriterion-cli/releases/latest)
+- [See all CLI versions](https://github.com/Kriterion-cc/kriterion-cli/releases)
+- [Use the universal Node.js script](https://raw.githubusercontent.com/Kriterion-cc/kriterion-cli/main/kriterion)
 - [Download the OpenAPI 3.1 specification](https://raw.githubusercontent.com/Kriterion-cc/kriterion-cli/main/openapi.json)
 
-## Install
+## Install the universal script
 
 ```bash
 mkdir -p "$HOME/.local/bin"
@@ -27,6 +29,12 @@ kriterion --help
 
 For automation, use a raw URL with a pinned commit instead of `main`.
 Inspect downloaded scripts before you run them.
+
+For a native file, select an exact version from [GitHub Releases](https://github.com/Kriterion-cc/kriterion-cli/releases).
+Then [check the downloaded file](docs/how-to/verify-download.md) before you run it.
+
+The macOS files do not use an Apple Developer ID and are not notarized.
+The Windows file does not use an Authenticode certificate.
 
 ## Submit an entry
 
@@ -71,6 +79,7 @@ The documentation uses the [Diátaxis](https://diataxis.fr/) structure.
 | --- | --- | --- | --- |
 | [First submission tutorial](docs/tutorials/first-submission.md) | [How-to guides](docs/how-to/index.md) | [CLI reference](docs/reference/cli.md) | [Security model](docs/explanation/security.md) |
 | | [Install](docs/how-to/install.md) | [Participant API](docs/reference/api.md) | [CLI design](docs/explanation/design.md) |
+| | [Check a download](docs/how-to/verify-download.md) | [Release manifest](docs/reference/releases.md) | |
 | | [Authenticate](docs/how-to/authenticate.md) | [OpenAPI 3.1](openapi.json) | |
 | | [Call the API directly](docs/how-to/use-api.md) | | |
 | | [Submit and check results](docs/how-to/submit-and-check.md) | [Environment variables](docs/reference/environment.md) | |
@@ -100,6 +109,9 @@ npm run check
 
 The tests use only Node.js standard-library modules.
 The check command validates JavaScript syntax, documentation links, and the OpenAPI document.
+
+Native releases use Node.js 24.21.0 LTS and a pinned `postject` package.
+Each tag builds on the matching GitHub runner architecture.
 
 ## Scope
 

@@ -11,6 +11,7 @@ Tutorials teach the complete workflow with one example.
 ## How-to guides
 
 - [Install or update the CLI](how-to/install.md)
+- [Check a downloaded CLI](how-to/verify-download.md)
 - [Authenticate the CLI](how-to/authenticate.md)
 - [Call the participant API directly](how-to/use-api.md)
 - [Submit and check an entry](how-to/submit-and-check.md)
@@ -24,6 +25,7 @@ How-to guides help you complete a specific task.
 - [CLI reference](reference/cli.md)
 - [Participant API reference](reference/api.md)
 - [Environment variables](reference/environment.md)
+- [Release files and manifest](reference/releases.md)
 - [OpenAPI 3.1 document](../openapi.json)
 
 Reference pages describe commands, inputs, responses, and stable behavior.

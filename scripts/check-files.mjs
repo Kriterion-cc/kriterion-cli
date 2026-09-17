@@ -21,7 +21,7 @@ console.log(`checked whitespace in ${files.length} files`)
 async function findFiles(directory) {
   const found = []
   for (const entry of await readdir(directory, { withFileTypes: true })) {
-    if (entry.name === '.git' || entry.name === 'node_modules') continue
+    if (entry.name === '.git' || entry.name === 'dist' || entry.name === 'node_modules') continue
     const item = path.join(directory, entry.name)
     if (entry.isDirectory()) found.push(...await findFiles(item))
     else found.push(item)

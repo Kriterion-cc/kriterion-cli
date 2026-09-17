@@ -5,10 +5,15 @@
   "description": "Dependency-free Kriterion participant CLI",
   "license": "UNLICENSED",
   "scripts": {
-    "check": "node --check kriterion && node scripts/check-files.mjs && node scripts/check-docs.mjs",
+    "build:native": "node scripts/build-sea.mjs",
+    "check": "node --check kriterion && node scripts/check-files.mjs && node scripts/check-docs.mjs && node scripts/check-version.mjs",
+    "release:manifest": "node scripts/generate-release.mjs --directory dist",
     "test": "node --test test/*.test.mjs"
   },
   "engines": {
     "node": ">=18"
+  },
+  "devDependencies": {
+    "postject": "1.0.0-alpha.6"
   }
 }

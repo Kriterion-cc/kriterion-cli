@@ -49,3 +49,14 @@ The hosted verifier also checks layout, obligations, axioms, lint, and challenge
 
 The public CLI does not contain the hosted verifier image or deployment credentials.
 The hosted result remains authoritative.
+
+## Release trust
+
+The release workflow builds each native file on a matching GitHub runner.
+It uses Node.js 24.21.0 LTS and the pinned `postject` package.
+
+The workflow checks every archive against `SHA256SUMS` before publication.
+Users must check the digest again after download.
+
+The macOS files do not use an Apple Developer ID and are not notarized.
+The Windows file does not use an Authenticode certificate.

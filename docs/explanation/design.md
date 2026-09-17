@@ -5,8 +5,11 @@
 The public CLI includes only participant actions.
 This boundary keeps organizer and deployment operations out of participant instructions.
 
-The executable uses only Node.js standard-library features.
-Participants do not need a package installation or a dependency lockfile.
+The CLI uses only Node.js standard-library features at run time.
+The universal script needs Node.js 18 or newer.
+
+Native files embed Node.js 24.21.0 LTS with Node.js Single Executable Applications.
+The release build uses a pinned `postject` package to put the application blob into each executable.
 
 ## JSON as the interface
 
@@ -31,4 +34,3 @@ Identity checks and submissions require a bearer token.
 
 Private challenge visibility can add authentication and role requirements.
 The API returns structured errors for these decisions.
-
