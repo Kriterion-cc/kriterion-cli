@@ -1,0 +1,14 @@
+{
+  "name": "@kriterion-cc/participant-cli",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Dependency-free Kriterion participant CLI",
+  "license": "UNLICENSED",
+  "scripts": {
+    "check": "node --check kriterion && node scripts/check-files.mjs && node scripts/check-docs.mjs",
+    "test": "node --test test/*.test.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
