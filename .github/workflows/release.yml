@@ -40,21 +40,6 @@ jobs:
       - run: npm test
       - run: npm run check
       - run: npm run build:native -- --target "${{ matrix.target }}"
-      - name: Check the Windows archive signature state
-        if: matrix.target == 'windows-x64'
-        shell: pwsh
-        run: |
-          $archive = "dist/kriterion-${{ github.ref_name }}-windows-x64.zip"
-          $directory = Join-Path $env:RUNNER_TEMP 'kriterion-signature-check'
-          Expand-Archive -LiteralPath $archive -DestinationPath $directory
-          $files = @(Get-ChildItem -LiteralPath $directory -File)
-          if ($files.Count -ne 1 -or $files[0].Name -ne 'kriterion.exe') {
-            throw 'The Windows archive contents are invalid.'
-          }
-          $status = (Get-AuthenticodeSignature $files[0].FullName).Status
-          if ($status -ne 'NotSigned') {
-            throw "Expected NotSigned, got $status."
-          }
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: native-${{ matrix.target }}

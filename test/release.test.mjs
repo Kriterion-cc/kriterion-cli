@@ -17,6 +17,7 @@ import {
 import { parseArguments, validateBuildEnvironment } from '../scripts/build-sea.mjs'
 import { generateRelease } from '../scripts/generate-release.mjs'
 import { verifyRelease } from '../scripts/verify-release.mjs'
+import { peSecurityDirectory } from '../scripts/pe-signature.mjs'
 
 const exec = promisify(execFile)
 let releaseDirectory
@@ -129,6 +130,24 @@ test('accepts only the package release tag', async () => {
   )
 })
 
+test('accepts an unsigned PE security directory', () => {
+  assert.deepEqual(peSecurityDirectory(testPe()), { offset: 0, size: 0 })
+})
+
+test('detects a signed-like PE security directory', () => {
+  assert.deepEqual(
+    peSecurityDirectory(testPe({ certificateOffset: 512, certificateSize: 16 })),
+    { offset: 512, size: 16 },
+  )
+})
+
+test('rejects malformed PE security directory data', () => {
+  assert.throws(
+    () => peSecurityDirectory(testPe({ certificateOffset: 512, certificateSize: 0 })),
+    /security directory is malformed/,
+  )
+})
+
 async function createTestArchives(directory) {
   const source = path.join(directory, 'archive-source')
   await mkdir(source)
@@ -159,4 +178,19 @@ async function createZip(executable, archive) {
 
 function escapePowerShell(value) {
   return value.replaceAll("'", "''")
+}
+
+function testPe({ certificateOffset = 0, certificateSize = 0 } = {}) {
+  const bytes = Buffer.alloc(1024)
+  const peOffset = 0x80
+  const optionalOffset = peOffset + 24
+  bytes.write('MZ', 0, 'ascii')
+  bytes.writeUInt32LE(peOffset, 0x3c)
+  bytes.write('PE\0\0', peOffset, 'ascii')
+  bytes.writeUInt16LE(240, peOffset + 20)
+  bytes.writeUInt16LE(0x20b, optionalOffset)
+  bytes.writeUInt32LE(16, optionalOffset + 108)
+  bytes.writeUInt32LE(certificateOffset, optionalOffset + 112 + 4 * 8)
+  bytes.writeUInt32LE(certificateSize, optionalOffset + 112 + 4 * 8 + 4)
+  return bytes
 }

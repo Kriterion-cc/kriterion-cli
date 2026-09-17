@@ -20,6 +20,7 @@ import {
   targetConfig,
 } from './release-config.mjs'
 import { extractAndInspectArchive } from './archive.mjs'
+import { assertPeNotSigned } from './pe-signature.mjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -74,6 +75,7 @@ export async function buildSea(options) {
       run('codesign', ['--remove-signature', executable])
     } else if (process.platform === 'win32') {
       removeWindowsSignature(executable)
+      await assertPeNotSigned(executable)
     }
 
     const postject = path.join(root, 'node_modules', 'postject', 'dist', 'cli.js')
@@ -86,7 +88,7 @@ export async function buildSea(options) {
     if (process.platform === 'darwin') {
       run('codesign', ['--sign', '-', '--force', executable])
     } else if (process.platform === 'win32') {
-      assertWindowsNotSigned(executable)
+      await assertPeNotSigned(executable)
     }
 
     const output = path.join(options.outputDirectory, archiveName(packageJson.version, options.target))
@@ -107,7 +109,7 @@ export async function buildSea(options) {
     assert.equal(version, packageJson.version)
     const help = run(extracted, ['--help'], { encoding: 'utf8' })
     assert.match(help, /Kriterion participant CLI/)
-    if (process.platform === 'win32') assertWindowsNotSigned(extracted)
+    if (process.platform === 'win32') await assertPeNotSigned(extracted)
     run(process.execPath, ['--test', path.join(root, 'test', 'kriterion.test.mjs')], {
       env: { ...process.env, KRITERION_TEST_EXECUTABLE: extracted },
     })
@@ -135,15 +137,6 @@ $tool = $tools | Select-Object -First 1
 if (-not $tool) { throw 'Cannot find signtool.exe.' }
 & $tool.FullName remove /s '${escapePowerShell(executable)}'
 if ($LASTEXITCODE -ne 0) { throw 'signtool could not remove the signature.' }
-`
-  run('powershell.exe', ['-NoLogo', '-NoProfile', '-NonInteractive', '-Command', command])
-  assertWindowsNotSigned(executable)
-}
-
-function assertWindowsNotSigned(executable) {
-  const command = `
-$status = (Get-AuthenticodeSignature -LiteralPath '${escapePowerShell(executable)}').Status
-if ($status -ne 'NotSigned') { throw \"Expected NotSigned, got $status.\" }
 `
   run('powershell.exe', ['-NoLogo', '-NoProfile', '-NonInteractive', '-Command', command])
 }
