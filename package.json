@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "Dependency-free Kriterion participant CLI",
-  "license": "UNLICENSED",
+  "license": "Apache-2.0",
   "scripts": {
     "build:native": "node scripts/build-sea.mjs",
     "check": "node --check kriterion && node scripts/check-files.mjs && node scripts/check-docs.mjs && node scripts/check-version.mjs",

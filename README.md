@@ -120,3 +120,7 @@ Organizer operations and the private hosted verifier are not included.
 
 The public API base URL is `https://api.kriterion.cc`.
 The web application is `https://kriterion.cc`.
+
+## License
+
+This repository is licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE).
